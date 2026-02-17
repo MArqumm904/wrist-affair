@@ -32,9 +32,13 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Separate refs for desktop and mobile
   const brandsRef = useRef(null);
-  const searchRef = useRef(null);
-  const searchInputRef = useRef(null);
+  const desktopSearchRef = useRef(null);
+  const desktopSearchInputRef = useRef(null);
+  const desktopSearchBtnRef = useRef(null);
+  const mobileSearchInputRef = useRef(null);
 
   // Scroll listener
   useEffect(() => {
@@ -62,10 +66,12 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", onOutside);
   }, []);
 
-  // Close search on outside click — only when clicking truly outside the search container
+  // Close DESKTOP search on outside click
   useEffect(() => {
     const onOutside = (e) => {
-      if (searchRef.current && !searchRef.current.contains(e.target)) {
+      const clickedBtn = desktopSearchBtnRef.current?.contains(e.target);
+      const clickedInside = desktopSearchRef.current?.contains(e.target);
+      if (!clickedBtn && !clickedInside) {
         setSearchOpen(false);
       }
     };
@@ -73,15 +79,22 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", onOutside);
   }, []);
 
-  // Focus search input when opened
+  // Focus the correct search input when opened
   useEffect(() => {
-    if (searchOpen && searchInputRef.current) {
-      // Small delay so the element is mounted before focusing
-      setTimeout(() => searchInputRef.current?.focus(), 50);
+    if (searchOpen) {
+      // Small delay to let the transition start, then focus
+      const timer = setTimeout(() => {
+        if (window.innerWidth >= 768) {
+          desktopSearchInputRef.current?.focus();
+        } else {
+          mobileSearchInputRef.current?.focus();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
     }
   }, [searchOpen]);
 
-  // Close mobile menu when resizing to desktop
+  // Close mobile menu on resize to desktop
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768 && mobileOpen) {
@@ -100,10 +113,11 @@ export default function Navbar() {
     }
   };
 
-  // Toggle search — icon button pe click se open/close, andar click karne se band nahi hoga
-  const handleSearchToggle = (e) => {
-    e.stopPropagation();
-    setSearchOpen((v) => !v);
+  // Toggle search: open karo toh close ho mobile menu, aur vice versa
+  const handleSearchToggle = () => {
+    setSearchOpen((prev) => !prev);
+    // Mobile menu band karo agar search khul rahi hai
+    if (!searchOpen) setMobileOpen(false);
   };
 
   // ─── Shared style tokens ───────────────────────────────
@@ -126,22 +140,6 @@ export default function Navbar() {
 
   return (
     <>
-      <style>{`
-        @keyframes mobileMenuSlideIn {
-          from {
-            opacity: 0;
-            transform: translateY(-12px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .mobile-menu-enter {
-          animation: mobileMenuSlideIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
-      `}</style>
-
       <header
         className={`sticky top-0 z-50 transition-all duration-300 border-b ${headerCls}`}
       >
@@ -151,7 +149,14 @@ export default function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setMobileOpen((v) => !v)}
+              onClick={() => {
+                if (mobileOpen) {
+                  setMobileOpen(false);
+                } else {
+                  setMobileOpen(true);
+                  setSearchOpen(false);
+                }
+              }}
               aria-label="Toggle menu"
               className={`md:hidden p-2 rounded-full transition-all duration-200 ${iconBtnCls} ${
                 scrolled ? "text-white" : "text-[#1A1A2E]"
@@ -175,7 +180,6 @@ export default function Navbar() {
                   />
                 </button>
 
-                {/* Dropdown panel */}
                 {brandsOpen && (
                   <div
                     className={`absolute left-0 top-full mt-3 w-64 rounded-lg shadow-2xl border overflow-hidden transition-all duration-200 ${
@@ -184,7 +188,6 @@ export default function Navbar() {
                         : "bg-white border-[#E2DED5]"
                     }`}
                   >
-                    {/* Arrow notch */}
                     <div
                       className={`absolute -top-2 left-6 w-4 h-4 rotate-45 ${
                         scrolled
@@ -192,7 +195,6 @@ export default function Navbar() {
                           : "bg-white border-l border-t border-[#E2DED5]"
                       }`}
                     />
-
                     <div className="relative py-2">
                       <div
                         className={`px-5 py-3 text-[9px] tracking-[0.22em] uppercase font-semibold ${
@@ -201,7 +203,6 @@ export default function Navbar() {
                       >
                         Our Brands
                       </div>
-
                       {brands.map(({ name, href }) => (
                         <Link
                           key={name}
@@ -216,7 +217,6 @@ export default function Navbar() {
                           {name}
                         </Link>
                       ))}
-
                       <div
                         className={`mt-2 pt-2 px-5 border-t ${scrolled ? "border-white/10" : "border-[#E2DED5]"}`}
                       >
@@ -242,6 +242,7 @@ export default function Navbar() {
               </Link>
             </div>
 
+            {/* ── CENTER LOGO ── */}
             <Link
               href="/"
               className="flex items-center justify-center md:absolute md:left-1/2 md:-translate-x-1/2"
@@ -258,7 +259,6 @@ export default function Navbar() {
 
             {/* ── DESKTOP: Right actions ── */}
             <div className="hidden md:flex items-center gap-4 lg:gap-6">
-              {/* WhatsApp Button */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -275,9 +275,10 @@ export default function Navbar() {
                 </a>
               </Button>
 
-              {/* Search Bar */}
-              <div className="relative" ref={searchRef}>
+              {/* Desktop Search */}
+              <div className="relative">
                 <Button
+                  ref={desktopSearchBtnRef}
                   variant="ghost"
                   size="icon"
                   className={`rounded-full ${iconBtnCls}`}
@@ -287,18 +288,15 @@ export default function Navbar() {
                   <Search size={16} />
                 </Button>
 
-                {/* Search Dropdown */}
                 {searchOpen && (
                   <div
+                    ref={desktopSearchRef}
                     className={`absolute right-0 top-full mt-3 w-80 rounded-lg shadow-2xl border overflow-hidden transition-all duration-200 ${
                       scrolled
                         ? "bg-[#0F0F0F] border-white/10"
                         : "bg-white border-[#E2DED5]"
                     }`}
-                    // Prevent clicks inside dropdown from closing it via outside click
-                    onMouseDown={(e) => e.stopPropagation()}
                   >
-                    {/* Arrow notch */}
                     <div
                       className={`absolute -top-2 right-4 w-4 h-4 rotate-45 ${
                         scrolled
@@ -306,17 +304,16 @@ export default function Navbar() {
                           : "bg-white border-l border-t border-[#E2DED5]"
                       }`}
                     />
-
                     <div className="relative p-4">
                       <form onSubmit={handleSearch} className="relative">
                         <Search
                           size={16}
-                          className={`absolute left-3 top-1/2 -translate-y-1/2 ${
+                          className={`absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none ${
                             scrolled ? "text-white/40" : "text-[#1A1A2E]/40"
                           }`}
                         />
                         <Input
-                          ref={searchInputRef}
+                          ref={desktopSearchInputRef}
                           type="text"
                           placeholder="Search watches..."
                           value={searchQuery}
@@ -328,8 +325,6 @@ export default function Navbar() {
                           }`}
                         />
                       </form>
-
-                      {/* Quick Links */}
                       <div className="mt-4 space-y-2">
                         <p
                           className={`text-[9px] tracking-[0.22em] uppercase font-semibold ${
@@ -354,7 +349,7 @@ export default function Navbar() {
                             >
                               {brand}
                             </button>
-                          ),
+                          )
                         )}
                       </div>
                     </div>
@@ -378,111 +373,125 @@ export default function Navbar() {
             <Button
               variant="ghost"
               size="icon"
-              className={`md:hidden p-2 rounded-full ${iconBtnCls}`}
+              className={`md:hidden p-2 rounded-full transition-all duration-200 ${iconBtnCls} ${
+                scrolled ? "text-white" : "text-[#1A1A2E]"
+              }`}
               onClick={handleSearchToggle}
+              aria-label="Toggle search"
             >
-              <Search size={18} />
+              {searchOpen ? <X size={18} /> : <Search size={18} />}
             </Button>
           </div>
 
-          {/* Mobile Search Bar — same toggle behaviour */}
-          {searchOpen && (
-            <div
-              className="md:hidden pb-4 pt-2 border-t border-[#E2DED5]"
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              <form onSubmit={handleSearch} className="relative">
-                <Search
-                  size={16}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1A1A2E]/40"
-                />
-                <Input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder="Search watches..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 pr-4 h-11 rounded-lg border bg-white border-[#E2DED5] text-[#1A1A2E] placeholder:text-[#1A1A2E]/40 focus:border-[#1A1A2E]/30"
-                />
-              </form>
-            </div>
-          )}
+          {/* ── MOBILE Search Bar — smooth height transition ── */}
+          <div
+            className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+              searchOpen
+                ? "max-h-24 opacity-100 py-3 border-t border-[#E2DED5]"
+                : "max-h-0 opacity-0 py-0 border-t-0"
+            }`}
+          >
+            <form onSubmit={handleSearch} className="relative">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#1A1A2E]/40"
+              />
+              <Input
+                ref={mobileSearchInputRef}
+                type="text"
+                inputMode="search"
+                placeholder="Search watches..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-4 h-11 w-full rounded-lg border bg-white border-[#E2DED5] text-[#1A1A2E] text-base placeholder:text-[#1A1A2E]/40 focus:border-[#1A1A2E] focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                style={{ fontSize: "16px", boxShadow: "none" }}
+              />
+            </form>
+          </div>
         </nav>
       </header>
 
-      {/* ── MOBILE MENU OVERLAY — smooth slide + fade animation ── */}
-      {mobileOpen && (
-        <div className="mobile-menu-enter fixed inset-0 top-16 bg-[#0F0F0F] z-[100] md:hidden overflow-y-auto">
-          <div className="px-6 py-8 text-white">
-            {/* Brands accordion */}
-            <div className="border-b border-white/10">
-              <button
-                onClick={() => setMobileBrandsOpen((v) => !v)}
-                className="w-full flex items-center justify-between py-4 text-sm font-medium tracking-[0.15em] uppercase"
-              >
-                Brands
-                <ChevronDown
-                  size={18}
-                  className={`transition-transform duration-200 ${mobileBrandsOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-              {mobileBrandsOpen && (
-                <div className="pb-4 pl-4 space-y-2">
-                  {brands.map(({ name, href }) => (
-                    <Link
-                      key={name}
-                      href={href}
-                      onClick={() => setMobileOpen(false)}
-                      className="block text-white/65 text-[13px] tracking-wide hover:text-white py-2 transition-colors duration-150"
-                    >
-                      {name}
-                    </Link>
-                  ))}
-                  <div className="pt-2">
-                    <Link
-                      href="#"
-                      onClick={() => setMobileOpen(false)}
-                      className="text-[10px] tracking-[0.22em] uppercase font-semibold text-white/40 hover:text-white transition-colors duration-150"
-                    >
-                      View All Brands →
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Products */}
-            <Link
-              href="#products"
-              onClick={() => setMobileOpen(false)}
-              className="block py-4 text-sm font-medium tracking-[0.15em] uppercase border-b border-white/10"
+      {/* ── MOBILE MENU OVERLAY ── */}
+      <div
+        className={`fixed inset-0 top-16 bg-[#0F0F0F] z-[100] md:hidden transition-all duration-300 ease-in-out ${
+          mobileOpen
+            ? "opacity-100 translate-x-0"
+            : "opacity-0 translate-x-full pointer-events-none"
+        } overflow-y-auto`}
+      >
+        <div className="px-6 py-8 text-white">
+          {/* Brands accordion */}
+          <div className="border-b border-white/10">
+            <button
+              onClick={() => setMobileBrandsOpen((v) => !v)}
+              className="w-full flex items-center justify-between py-4 text-sm font-medium tracking-[0.15em] uppercase"
             >
-              Products
-            </Link>
-
-            {/* Actions */}
-            <div className="mt-8 space-y-4">
-              <a
-                href="https://wa.me/923001234567"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => setMobileOpen(false)}
-                className="flex items-center gap-3 text-white/75 hover:text-white transition-colors duration-150"
-              >
-                <MessageCircle size={18} />
-                WhatsApp Us
-              </a>
-
-              <Button
-                onClick={() => setMobileOpen(false)}
-                className="w-full bg-white text-[#0F0F0F] hover:bg-white/90 rounded-full text-[11px] tracking-[0.22em] uppercase font-semibold h-12"
-              >
-                Explore Collection
-              </Button>
+              Brands
+              <ChevronDown
+                size={18}
+                className={`transition-transform duration-200 ${mobileBrandsOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                mobileBrandsOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              <div className="pb-4 pl-4 space-y-2">
+                {brands.map(({ name, href }) => (
+                  <Link
+                    key={name}
+                    href={href}
+                    onClick={() => setMobileOpen(false)}
+                    className="block text-white/65 text-[13px] tracking-wide hover:text-white py-2 transition-colors duration-150"
+                  >
+                    {name}
+                  </Link>
+                ))}
+                <div className="pt-2">
+                  <Link
+                    href="#"
+                    onClick={() => setMobileOpen(false)}
+                    className="text-[10px] tracking-[0.22em] uppercase font-semibold text-white/40 hover:text-white transition-colors duration-150"
+                  >
+                    View All Brands →
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
+
+          {/* Products */}
+          <Link
+            href="#products"
+            onClick={() => setMobileOpen(false)}
+            className="block py-4 text-sm font-medium tracking-[0.15em] uppercase border-b border-white/10"
+          >
+            Products
+          </Link>
+
+          {/* Actions */}
+          <div className="mt-8 space-y-4">
+            <a
+              href="https://wa.me/923001234567"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 text-white/75 hover:text-white transition-colors duration-150"
+            >
+              <MessageCircle size={18} />
+              WhatsApp Us
+            </a>
+
+            <Button
+              onClick={() => setMobileOpen(false)}
+              className="w-full bg-white text-[#0F0F0F] hover:bg-white/90 rounded-full text-[11px] tracking-[0.22em] uppercase font-semibold h-12"
+            >
+              Explore Collection
+            </Button>
+          </div>
         </div>
-      )}
+      </div>
     </>
   );
 }
