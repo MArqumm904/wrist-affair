@@ -1,0 +1,27 @@
+{
+  "name": "Wrist Affair – Timeless Luxury Watches",
+  "short_name": "Wrist Affair",
+  "description": "Discover premium and elegant watches at Wrist Affair. Crafted for those who value timeless style and sophistication.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F3F1EA",
+  "theme_color": "#1F1F1F",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "lifestyle", "luxury"],
+  "lang": "en-US",
+  "dir": "ltr"
+}
