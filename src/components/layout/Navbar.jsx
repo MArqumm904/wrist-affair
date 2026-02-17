@@ -62,7 +62,7 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", onOutside);
   }, []);
 
-  // Close search on outside click
+  // Close search on outside click — only when clicking truly outside the search container
   useEffect(() => {
     const onOutside = (e) => {
       if (searchRef.current && !searchRef.current.contains(e.target)) {
@@ -76,7 +76,8 @@ export default function Navbar() {
   // Focus search input when opened
   useEffect(() => {
     if (searchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
+      // Small delay so the element is mounted before focusing
+      setTimeout(() => searchInputRef.current?.focus(), 50);
     }
   }, [searchOpen]);
 
@@ -99,6 +100,12 @@ export default function Navbar() {
     }
   };
 
+  // Toggle search — icon button pe click se open/close, andar click karne se band nahi hoga
+  const handleSearchToggle = (e) => {
+    e.stopPropagation();
+    setSearchOpen((v) => !v);
+  };
+
   // ─── Shared style tokens ───────────────────────────────
   const headerCls = scrolled
     ? "bg-[#0F0F0F] border-white/10 shadow-[0_2px_24px_rgba(0,0,0,0.45)]"
@@ -117,11 +124,24 @@ export default function Navbar() {
         : "text-[#1A1A2E]/55 hover:text-[#1A1A2E] after:bg-[#1A1A2E]"
     }`;
 
-  const logoCls = scrolled ? "text-white" : "text-[#1A1A2E]";
-  const taglineCls = scrolled ? "text-white/35" : "text-[#1A1A2E]/35";
-
   return (
     <>
+      <style>{`
+        @keyframes mobileMenuSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(-12px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .mobile-menu-enter {
+          animation: mobileMenuSlideIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+      `}</style>
+
       <header
         className={`sticky top-0 z-50 transition-all duration-300 border-b ${headerCls}`}
       >
@@ -227,14 +247,15 @@ export default function Navbar() {
               className="flex items-center justify-center md:absolute md:left-1/2 md:-translate-x-1/2"
             >
               <Image
-                src={scrolled ? logodark : logo1} // Yahan apni image ka sahi path likhein
+                src={scrolled ? logodark : logo1}
                 alt="Wrist Affair - Let us adorn your wrist"
-                width={200} // Image ki original width (aspect ratio maintain karne ke liye)
-                height={100} // Image ki original height
+                width={200}
+                height={100}
                 className="w-26 sm:w-30 md:w-32 lg:w-40 h-auto object-contain transition-opacity duration-200 hover:opacity-80"
-                priority // Logo LCP element hai, isliye priority true rakhein
+                priority
               />
             </Link>
+
             {/* ── DESKTOP: Right actions ── */}
             <div className="hidden md:flex items-center gap-4 lg:gap-6">
               {/* WhatsApp Button */}
@@ -260,7 +281,7 @@ export default function Navbar() {
                   variant="ghost"
                   size="icon"
                   className={`rounded-full ${iconBtnCls}`}
-                  onClick={() => setSearchOpen(!searchOpen)}
+                  onClick={handleSearchToggle}
                   aria-label="Toggle search"
                 >
                   <Search size={16} />
@@ -274,6 +295,8 @@ export default function Navbar() {
                         ? "bg-[#0F0F0F] border-white/10"
                         : "bg-white border-[#E2DED5]"
                     }`}
+                    // Prevent clicks inside dropdown from closing it via outside click
+                    onMouseDown={(e) => e.stopPropagation()}
                   >
                     {/* Arrow notch */}
                     <div
@@ -356,21 +379,25 @@ export default function Navbar() {
               variant="ghost"
               size="icon"
               className={`md:hidden p-2 rounded-full ${iconBtnCls}`}
-              onClick={() => setSearchOpen(!searchOpen)}
+              onClick={handleSearchToggle}
             >
               <Search size={18} />
             </Button>
           </div>
 
-          {/* Mobile Search Bar */}
+          {/* Mobile Search Bar — same toggle behaviour */}
           {searchOpen && (
-            <div className="md:hidden pb-4 pt-2 border-t border-[#E2DED5]">
+            <div
+              className="md:hidden pb-4 pt-2 border-t border-[#E2DED5]"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
               <form onSubmit={handleSearch} className="relative">
                 <Search
                   size={16}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-[#1A1A2E]/40"
                 />
                 <Input
+                  ref={searchInputRef}
                   type="text"
                   placeholder="Search watches..."
                   value={searchQuery}
@@ -383,9 +410,9 @@ export default function Navbar() {
         </nav>
       </header>
 
-      {/* ── MOBILE MENU OVERLAY ── */}
+      {/* ── MOBILE MENU OVERLAY — smooth slide + fade animation ── */}
       {mobileOpen && (
-        <div className="fixed inset-0 top-16 bg-[#0F0F0F] z-[100] md:hidden overflow-y-auto">
+        <div className="mobile-menu-enter fixed inset-0 top-16 bg-[#0F0F0F] z-[100] md:hidden overflow-y-auto">
           <div className="px-6 py-8 text-white">
             {/* Brands accordion */}
             <div className="border-b border-white/10">
