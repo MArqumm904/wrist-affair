@@ -1,14 +1,15 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback, useRef } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import Image from "next/image"
+import { useState, useEffect, useCallback, useRef } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
 
-import watchMoser from "@/assets/watch-moser.png"
-import watchPatek from "@/assets/watch-patek.png"
-import watchRolex from "@/assets/watch-rolex.png"
-import watchAP from "@/assets/watch-ap.png"
+import watchMoser from "@/assets/watch-moser.png";
+import watchPatek from "@/assets/watch-patek.png";
+import watchRolex from "@/assets/watch-rolex.png";
+import watchAP from "@/assets/watch-ap.png";
+import Link from "next/link";
 
 const slides = [
   {
@@ -39,121 +40,121 @@ const slides = [
     price: "95 000 AED",
     image: watchAP,
   },
-]
+];
 
 export default function HeroSlider({ selectedBrand }) {
-  const [current, setCurrent] = useState(0)
-  const [animating, setAnimating] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
-  
+  const [current, setCurrent] = useState(0);
+  const [animating, setAnimating] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+
   // Drag/swipe state
-  const [dragStart, setDragStart] = useState(null)
-  const [dragOffset, setDragOffset] = useState(0)
-  const sliderRef = useRef(null)
+  const [dragStart, setDragStart] = useState(null);
+  const [dragOffset, setDragOffset] = useState(0);
+  const sliderRef = useRef(null);
 
   // Sync slider with selected brand from CategoryBar
   useEffect(() => {
     if (selectedBrand) {
-      const index = slides.findIndex(slide => slide.brand === selectedBrand)
+      const index = slides.findIndex((slide) => slide.brand === selectedBrand);
       if (index !== -1 && index !== current) {
-        goTo(index)
+        goTo(index);
       }
     }
-  }, [selectedBrand, current])
+  }, [selectedBrand, current]);
 
   const goTo = useCallback(
     (idx) => {
-      if (animating) return
-      setAnimating(true)
-      setDragOffset(0)
-      setCurrent(idx)
+      if (animating) return;
+      setAnimating(true);
+      setDragOffset(0);
+      setCurrent(idx);
       setTimeout(() => {
-        setAnimating(false)
-      }, 700)
+        setAnimating(false);
+      }, 700);
     },
-    [animating]
-  )
+    [animating],
+  );
 
   const prev = useCallback(() => {
-    goTo((current - 1 + slides.length) % slides.length)
-  }, [current, goTo])
+    goTo((current - 1 + slides.length) % slides.length);
+  }, [current, goTo]);
 
   const next = useCallback(() => {
-    goTo((current + 1) % slides.length)
-  }, [current, goTo])
+    goTo((current + 1) % slides.length);
+  }, [current, goTo]);
 
   // Auto-play with pause on hover
   useEffect(() => {
-    if (isPaused) return
-    const timer = setInterval(next, 5000)
-    return () => clearInterval(timer)
-  }, [current, isPaused, next])
+    if (isPaused) return;
+    const timer = setInterval(next, 5000);
+    return () => clearInterval(timer);
+  }, [current, isPaused, next]);
 
   // Drag handlers
   const handleDragStart = (clientX) => {
-    setDragStart(clientX)
-    setIsPaused(true)
-  }
+    setDragStart(clientX);
+    setIsPaused(true);
+  };
 
   const handleDragMove = (clientX) => {
-    if (dragStart === null) return
-    const diff = clientX - dragStart
-    setDragOffset(diff)
-  }
+    if (dragStart === null) return;
+    const diff = clientX - dragStart;
+    setDragOffset(diff);
+  };
 
   const handleDragEnd = () => {
-    if (dragStart === null) return
-    
-    const threshold = 75
+    if (dragStart === null) return;
+
+    const threshold = 75;
     if (dragOffset > threshold) {
-      prev()
+      prev();
     } else if (dragOffset < -threshold) {
-      next()
+      next();
     } else {
-      setDragOffset(0)
+      setDragOffset(0);
     }
-    
-    setDragStart(null)
-    setDragOffset(0)
-    setIsPaused(false)
-  }
+
+    setDragStart(null);
+    setDragOffset(0);
+    setIsPaused(false);
+  };
 
   // Mouse events
   const onMouseDown = (e) => {
-    e.preventDefault()
-    handleDragStart(e.clientX)
-  }
+    e.preventDefault();
+    handleDragStart(e.clientX);
+  };
 
   const onMouseMove = (e) => {
     if (dragStart !== null) {
-      handleDragMove(e.clientX)
+      handleDragMove(e.clientX);
     }
-  }
+  };
 
   const onMouseUp = () => {
-    handleDragEnd()
-  }
+    handleDragEnd();
+  };
 
   const onMouseLeave = () => {
     if (dragStart !== null) {
-      handleDragEnd()
+      handleDragEnd();
     }
-  }
+  };
 
   // Touch events
   const onTouchStart = (e) => {
-    handleDragStart(e.touches[0].clientX)
-  }
+    handleDragStart(e.touches[0].clientX);
+  };
 
   const onTouchMove = (e) => {
-    handleDragMove(e.touches[0].clientX)
-  }
+    handleDragMove(e.touches[0].clientX);
+  };
 
   const onTouchEnd = () => {
-    handleDragEnd()
-  }
+    handleDragEnd();
+  };
 
-  const slide = slides[current]
+  const slide = slides[current];
 
   return (
     <section
@@ -161,8 +162,8 @@ export default function HeroSlider({ selectedBrand }) {
       className="relative min-h-[calc(100vh-12rem)] sm:min-h-[calc(100vh-10rem)] lg:min-h-[calc(100vh-10rem)] overflow-hidden transition-colors duration-700 select-none bg-[#F3F1EA]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => {
-        setIsPaused(false)
-        onMouseLeave()
+        setIsPaused(false);
+        onMouseLeave();
       }}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
@@ -176,13 +177,15 @@ export default function HeroSlider({ selectedBrand }) {
           className="grid lg:grid-cols-2 gap-6 lg:gap-12 items-center min-h-[calc(100vh-12rem)] sm:min-h-[calc(100vh-10rem)] lg:min-h-[calc(100vh-10rem)] py-8 sm:py-12 lg:py-20"
           style={{
             transform: `translateX(${dragOffset}px)`,
-            transition: dragStart !== null ? 'none' : 'transform 0.3s ease-out',
+            transition: dragStart !== null ? "none" : "transform 0.3s ease-out",
           }}
         >
           {/* TEXT CONTENT */}
           <div
             className={`space-y-4 sm:space-y-6 lg:space-y-8 order-2 lg:order-1 transition-all duration-700 ${
-              animating ? "opacity-0 translate-y-4" : "opacity-100 translate-y-0"
+              animating
+                ? "opacity-0 translate-y-4"
+                : "opacity-100 translate-y-0"
             }`}
           >
             {/* Brand */}
@@ -216,10 +219,11 @@ export default function HeroSlider({ selectedBrand }) {
             </div>
 
             {/* CTA */}
-          <Button className="hidden sm:inline-flex mt-4 sm:mt-6 px-8 sm:px-12 h-11 sm:h-12 lg:h-14 text-[10px] tracking-[0.2em] uppercase font-semibold rounded-none border-2 bg-[#1F1F1F] text-white border-[#1F1F1F] hover:bg-transparent hover:text-[#1F1F1F] transition-all duration-300 cursor-pointer">
-  Explore
-</Button>
-
+            <Link href="/products/wa-009">
+              <Button className="hidden sm:inline-flex mt-4 sm:mt-6 px-8 sm:px-12 h-11 sm:h-12 lg:h-14 text-[10px] tracking-[0.2em] uppercase font-semibold rounded-none border-2 bg-[#1F1F1F] text-white border-[#1F1F1F] hover:bg-transparent hover:text-[#1F1F1F] transition-all duration-300 cursor-pointer">
+                Explore
+              </Button>
+            </Link>
           </div>
 
           {/* WATCH IMAGE */}
@@ -276,7 +280,9 @@ export default function HeroSlider({ selectedBrand }) {
             onClick={() => goTo(i)}
             aria-label={`Go to slide ${i + 1}`}
             className={`transition-all duration-300 rounded-full bg-[#1F1F1F] ${
-              i === current ? "w-8 h-[5px] opacity-100" : "w-[5px] h-[5px] opacity-25 hover:opacity-60"
+              i === current
+                ? "w-8 h-[5px] opacity-100"
+                : "w-[5px] h-[5px] opacity-25 hover:opacity-60"
             }`}
           />
         ))}
@@ -305,5 +311,5 @@ export default function HeroSlider({ selectedBrand }) {
         </Button>
       </div>
     </section>
-  )
+  );
 }

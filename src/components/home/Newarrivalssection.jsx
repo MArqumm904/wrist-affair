@@ -14,6 +14,7 @@ import prod7 from "@/assets/products/prod-7.png"
 import prod8 from "@/assets/products/prod-8.png"
 import prod9 from "@/assets/products/prod-9.png"
 import Image from "next/image"
+import Link from "next/link"
 
 // ─── PRODUCTS DATA ────────────────────────────────────────────────────────────
 const products = [
@@ -151,6 +152,7 @@ const ProductCard = ({ product, index }) => {
   const BadgeIcon = badge.icon
 
   return (
+    <Link href={`/products/${product.id}`}>
     <motion.article
       className="group relative flex flex-col bg-white border border-[#E5E2D9] overflow-hidden cursor-pointer"
       initial={{ opacity: 0, y: 40 }}
@@ -260,6 +262,7 @@ const ProductCard = ({ product, index }) => {
         </div>
       </div>
     </motion.article>
+    </Link>
   )
 }
 
